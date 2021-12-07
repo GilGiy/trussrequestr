@@ -3,8 +3,8 @@
 @section('content')
     <div class="mx-5"> 
         <div class=" pt-32 text-center">
-            <h1 class="pt-4 text-5xl text-center font-semibold text-gray-800">simple design</h1>
-            <h1 class=" text-5xl text-center font-semibold text-gray-400">for simpletons</h1>
+            <h1 class="pt-4 text-5xl text-center font-semibold text-gray-800 animate__animated animate__slideInLeft">simple design</h1>
+            <h1 class=" text-5xl text-center font-semibold text-gray-400 animate__animated animate__slideInRight">for simpletons</h1>
         </div>
         <div class="text-center text-gray-500">
             <div class="m-auto">
@@ -17,4 +17,5 @@
             <a href="/build-a-quote" class="bg-gray-800 text-white p-3 rounded-lg shadow-md hover:bg-gray-600 uppercase tracking-wide font-semibold">Build my Quote</a>
         </div>
     </div>
+
 @endsection

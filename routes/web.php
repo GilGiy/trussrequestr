@@ -20,3 +20,7 @@ Route::get('/', function () {
 Route::get('/build-a-quote', function() {
     return view('design');
 });
+
+Route::get('/design-truss', function() {
+    return view('designer');
+});
