@@ -6,13 +6,13 @@ $( document ).ready(function() {
 
     let truss_details = {
         span: "30-00-00", 
-        heel_left: "3-0-0", 
+        heel_left: "1-0-0", 
         heel_right: "1-0-0", 
         cant_left: "00-00-00", 
         cant_right: "00-00-00", 
-        pitch_left: "00-6-00", 
-        pitch_right: "00-6-00", 
-        oh_left: "02-00-00", 
+        pitch_left: "00-5-00", 
+        pitch_right: "00-5-00", 
+        oh_left: "00-00-00", 
         oh_right: "02-00-00", 
         oh_type: "unsure", 
         oh_cut: "plumb", 
@@ -20,7 +20,8 @@ $( document ).ready(function() {
         bc_type: "00-03-08",
     }
 
-    const CANVAS_HEIGHT = 640;
+    const CANVAS_HEIGHT = 400;
+    const CANVAS_WIDTH = 900;
 
     class Truss {
         constructor(span, heel_left, heel_right, cant_left, cant_right, pitch_left, pitch_right, oh_left, oh_right, oh_type, oh_cut, tc_type, bc_type) {
@@ -58,43 +59,15 @@ $( document ).ready(function() {
             return(total_length);
         }
 
-        LBP_Y() {
-            // pretend to start at this point...add the heel height, then work backwards towards the end of the overhang--see if this is lower
-            // than the height of the heel... if yes - the bearing height will be more than zero....for that side. Repeat for both sides.
-
-            let tail_width = 0;
-            if(this.oh_cut == "plumb"){
-                // tail_width = (this.tc_type / Math.sin(this.pitchAngle(this.pitch_left)));
-                tail_width = this.tc_type / Math.sin(90 - (toRadians(this.pitchAngle(this.pitch_left))))
-            } else if (this.oh_cut == "squre") {
-                tail_width = (Math.cos(90 - (to(this.pitchAngle(this.pitch_left)))) * this.tc_type)
-            }
-
-            // Test for left bearing point
-            let rise_of_overhangs = ((this.oh_left + this.cant_left) * this.pitch_left) + tail_width;
-            let bearing_y = 0;
-
-            if (rise_of_overhangs > (this.heel_left)) {
-                bearing_y = rise_of_overhangs - (this.heel_left);
-            } else {
-                bearing_y = 0;
-            }
-            return (bearing_y);
-        }
-
-        LBP_X() {
-            let bearing_x = (this.oh_left + this.cant_left);
-            return(bearing_x)
-        }
-
         pixelDist(sixteenths) {
             let truss_length = this.trussLength();
             return((CANVAS_HEIGHT/(truss_length)) * sixteenths);
         }
 
         pitchAngle(pitch) {
-            let pitchAngleKey = {16: 4.76, 32: 9.46, 48: 14.04, 64: 18.43, 80:22.62, 96: 26.57, 112:30.26, 128:33.69, 144: 36.87, 160:39.81, 176:42.51, 192:45}
-            return pitchAngleKey[pitch];
+            let pitch_angle = Math.atan(pitch / (12*16))
+            pitch_angle = (pitch_angle * 180) / Math.PI;
+            return pitch_angle;
         }
 
         rawToSixteenths(measurement) {
@@ -136,6 +109,11 @@ $( document ).ready(function() {
 
             return(sides[value]);
         }
+
+        riseInRun(run, angle) {
+            let rise = (run * (Math.tan(toRadians(angle))));
+            return rise;
+        }
     }
 
     let truss = new Truss(
@@ -156,48 +134,78 @@ $( document ).ready(function() {
     
     function scaleDim(sixteenths) {
         let truss_length = truss.trussLength();
-        return((CANVAS_HEIGHT/(truss_length)) * sixteenths);
+        return((CANVAS_WIDTH/(truss_length)) * sixteenths);
     }
 
 
     function drawTruss(){
-        // Draw the left TC
+        
+        // LEFT SIDE HEEL AND OVERHANG
+        let oh_left_rise = truss.riseInRun(truss.oh_left + truss.cant_left, truss.pitchAngle(truss.pitch_left));
+        let start_x = truss.oh_left;
+        
 
-        // Draw the right TC
+        let left_y = 0;
+        let start_at_overhang = false;
 
-        // 
+        if (oh_left_rise > truss.heel_left){
+            left_y = oh_left_rise - truss.heel_left;
+            start_at_overhang = true;
+        } else {
+            left_y = 0;
+        }
+
+
+        // RIGHT SIDE HEEL AND OVERHANG
+        let oh_right_rise = truss.riseInRun(truss.oh_right + truss.cant_right, truss.pitchAngle(truss.pitch_right));
+        finish_x = truss.solveForSides(["peakLeft"]) + truss.solveForSides(["peakRight"]);
+
+        let right_y = 0;
+
+        if (oh_right_rise > truss.heel_right){
+            right_y = oh_right_rise - truss.heel_right;
+        } else {
+            right_y = 0;
+        }
+
+        starting_y = Math.max(left_y, right_y);
+
+
+        let start_points = start_x + " " + starting_y;
+        let left_heel_top = start_x + " " + (starting_y + truss.heel_left);
+        
+        // PEAK
+        let peak = truss.solveForSides(["peakLeft"]) + " " + truss.peakHeight();
+
+
+        
+
+
+        let finish_points = finish_x + " " + starting_y;
+        let right_heel_top = finish_x + " " + (starting_y + truss.heel_right);
+
+
+        return invertPoints([start_points, left_heel_top, peak, right_heel_top, finish_points]);
     }
 
-    // document.getElementByClassName("myCanvas").style.width = "300px"; 
-    $(".myCanvas").width("1500px");
 
-    drawTruss();
-    const canvas = document.querySelector('.myCanvas');
-    ctx = canvas.getContext('2d');
+    function invertPoints(point_list = []) {
+        
+        let points = [];
+        let X_inv = 0;
+        let Y_inv = 0;
 
-    // Set display size (css pixels).
-    var size = 800;
-    canvas.style.width = size + "px";
-    canvas.style.height = size + "px";
+        point_list.forEach(function(item, index) {
+            points = item.split(" ");
+            X_inv = scaleDim(points[0]);
+            Y_inv = (CANVAS_HEIGHT - scaleDim(points[1]));
+            point_list[index] = (X_inv + " " + Y_inv);
+        });
 
-    // Set actual size in memory (scaled to account for extra pixel density).
-    var scale = window.devicePixelRatio; // Change to 1 on retina screens to see blurry canvas.
-    canvas.width = Math.floor(size * scale);
-    canvas.height = Math.floor(size * scale);
+        return(point_list);
 
-    // Normalize coordinate system to use css pixels.
-    ctx.scale(scale, scale);
+    }
 
-    let peakHeight = truss.peakHeight();
-
-    ctx.beginPath();       // Start a new path
-    ctx.moveTo(0, 200);
-    ctx.lineTo(scaleDim(truss.solveForSides("peakLeft")), 200-(scaleDim(peakHeight)));
-    ctx.lineTo(scaleDim(truss.solveForSides("peakLeft")) + scaleDim(truss.solveForSides("peakRight")), 200);
-    ctx.stroke();
-
-    ctx.moveTo(scaleDim(truss.LBP_X()), 200 - scaleDim(truss.LBP_Y()))
-    ctx.lineTo(scaleDim(truss.LBP_X() + truss.span), 200 - scaleDim(truss.LBP_Y()))
-    ctx.stroke();
-
+    let svg_line = document.getElementById("truss-line")
+    svg_line.setAttribute("points", drawTruss());
 });
