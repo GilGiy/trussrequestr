@@ -2,8 +2,9 @@
 
 @section('content')
 <script src="/js/TrussCalcs.js"></script>
-<canvas class=" bg-gray-50 mx-auto mt-6 rounded-md shadow-lg myCanvas" width="1000" height="400">
-    <p>No canvas supported here buddy</p>
-</canvas>
+
+<svg width="900" height="400" style="background-color: wheat; margin-left: auto; margin-right: auto;">
+    <polyline id="truss-line" points="" stroke="black" fill="transparent" stroke-width="1"/>
+</svg>
 
 @endsection
